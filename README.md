@@ -6,6 +6,6 @@ My notes on reinforcement learning
 
 ### In Progress
 
-- [ ] Finish [David Silver's RL course](david%20silver%20RL%20course/course%20index.md)
+- [ ] Finish David Silver's RL course [index](david%20silver%20RL%20course/course%20index.md)
 
 
