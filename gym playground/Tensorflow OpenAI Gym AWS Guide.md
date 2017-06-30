@@ -4,6 +4,8 @@ The reason why this is needed is because OpenAI Gym requires a display, which on
 
 This also means that you can't use pre-built AMI or docker images.
 
+* **Credit**: Most of this guide is sourced from [Wald Post](https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html)
+
 ## Installing Tensorflow with The `-no-opengl-files` Flag
 
 1. Install Ubuntu 16.04 LST on AWS, choose 100GB for the harddrive. Use p2.xlarge.
