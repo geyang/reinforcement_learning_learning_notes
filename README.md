@@ -28,3 +28,8 @@ My notes on reinforcement learning
 I found textbook to be the most reliable source, but there is usually too much material. So the best way to ask for guidance seem to be:
     > I'm reading Chapter xx and topic xx atm, what are the key things I should pay attention to?
     
+
+## Reading List
+
+### Done
+- [x] Contextual bandits: http://hunch.net/?p=298
