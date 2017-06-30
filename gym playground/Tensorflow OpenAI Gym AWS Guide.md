@@ -145,7 +145,7 @@ This also means that you can't use pre-built AMI or docker images.
 - Sometimes there are some problems with Box2D. If you want to be sure, follow the instructions below.
 - We already installed Swig (we need 3.x before compiling Box2D). Git clone Pybox2d
 
-1. build and install pybox2d:
+1. build and install `pybox2d`:
     ```bash
     git clone https://github.com/pybox2d/pybox2d.git
     cd pybox2d
