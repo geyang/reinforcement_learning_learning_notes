@@ -161,16 +161,54 @@ This also means that you can't use pre-built AMI or docker images.
     pip install -e '.[all]'
     ```
     
-## Getting headless Server to work
+## Using A Headless Server and VNC into the Display
 
-### The Quick Way:
+The gym will need to run with an `xvfb` display. You can connect to this display remotely with an VNC client to monitor the environment.
+
+### The Quick Way to Run:
 Just use `xvfb-run` (note X is lower case). Do:
 ```bash
 xvfb-run -a -s "-screen 0 1400x900x24 +extension RANDR" -- python your_training_script.py
 ```
-Note that the screen size is not flexible. I could not get other screen size to work.
+Note that the screen size is not flexible. I could not get other screen size to work so you have to use this specific size.
 
 ### The Right Way:
+1. First start a display:
+    ```bash
+    Xvfb :1 -screen 0 1400x900x24 +extension RANDR &
+    ```
+    This script starts a display 1, with screen 0. It's id is `:1.0`.
+2. Now set the environment variable `DISPLAY`:
+    ```bash
+    export DISPLAY=:1.0
+    ```
+3. In the same shell session
+    ```bash
+    DISPLAY=1:0 python3 -m train.py # the DISPLAY variable is optional since we already set earlier.
+    ```
 
 ### Using VNC to Access the Display Remotely:
-
+0. Preparation: 
+    1. install `v11vnc`
+        ```bash
+        sudo apt-get install v11vnc
+        ```
+    2. setup access password
+        ```bash
+        x11vnc -storepasswd $(VNC_PASSWORD) /tmp/vncpass
+        ```
+1. set up a vnc session using `v11vnc`:
+    ```bash
+    x11vnc -ncache -rfbport $(VNC_PORT) -rfbauth /tmp/vncpass -display :1 -forever -auth /tmp/xvfb.auth
+    ```
+2. Now on your local machine: 
+    1. setup a ssh tunnel
+        ```bash
+        ssh -L $(VNC_PORT):localhost:$(VNC_PORT) ubuntu@$(IP_ADDRESS) -i ~/.ec2/escherpad.pem
+        ```
+    2. connect locally
+        ```bash
+        x11vnc -safer -localhost -nopw -once -display :1.0
+        ```
+    Alternatively, you could try to connect directly.
+    
