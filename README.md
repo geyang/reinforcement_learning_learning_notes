@@ -3,16 +3,18 @@
 My notes on reinforcement learning
 
 ## Todo
+
+- [ ] Get MuJoCo
 - [ ] Figure out chapters of the textbook to read.
 
 ### Done
+
 - [x] setup OpenAI Gym on AWS (yay!)
 
 ### In Progress
 - [ ] Finish David Silver's RL course [index](david%20silver%20RL%20course/course%20index.md)
 
 - [ ] gredients
-
       > Since almost all algs are just computing gradients, it's important to know what that means. 
       > [http://blog.shakirm.com/2015/11/machine-learning-trick-of-the-day-5-log-derivative-trick/](http://blog.shakirm.com/2015/11/machine-learning-trick-of-the-day-5-log-derivative-trick/)
       >
