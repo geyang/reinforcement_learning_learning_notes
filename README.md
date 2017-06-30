@@ -32,4 +32,6 @@ I found textbook to be the most reliable source, but there is usually too much m
 ## Reading List
 
 ### Done
-- [x] Contextual bandits: http://hunch.net/?p=298
+- [x] Contextual bandits: 
+    - http://hunch.net/?p=298
+    - https://getstream.io/blog/introduction-contextual-bandits/
