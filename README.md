@@ -3,9 +3,26 @@
 My notes on reinforcement learning
 
 ## Todo
+- [ ] Figure out chapters of the textbook to read.
+
+### Done
+- [x] setup OpenAI Gym on AWS (yay!)
 
 ### In Progress
-
 - [ ] Finish David Silver's RL course [index](david%20silver%20RL%20course/course%20index.md)
 
+- [ ] gredients
 
+      > Since almost all algs are just computing gradients, it's important to know what that means. 
+      > [http://blog.shakirm.com/2015/11/machine-learning-trick-of-the-day-5-log-derivative-trick/](http://blog.shakirm.com/2015/11/machine-learning-trick-of-the-day-5-log-derivative-trick/)
+      >
+      > The above is a derivation of reinforce. It's quite good. I'd focus on internalizing the problem here. That we want to compute a derivative of an expectation with respect to a distribution (the policy), and we need a trick to do so. 
+      >
+      > [https://arxiv.org/pdf/1506.05254.pdf](https://arxiv.org/pdf/1506.05254.pdf) is a longer explanation of different viewpoints for taking derivatives. 
+
+- [ ] Berkeley RL course [http://rll.berkeley.edu/deeprlcourse/](http://rll.berkeley.edu/deeprlcourse/) 
+
+### On How to Ask for Help
+I found textbook to be the most reliable source, but there is usually too much material. So the best way to ask for guidance seem to be:
+    > I'm reading Chapter xx and topic xx atm, what are the key things I should pay attention to?
+    
