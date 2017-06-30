@@ -67,7 +67,7 @@ This also means that you can't use pre-built AMI or docker images.
     wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run
     ```
 
-7. **At the same time**, while downloading register at NVIDIA, **download CUDNN 5 runtinme lib** on your local machine and SCP it to the remote instance. **This is going to take a while (10min depends on your upload speed), so go to step 9 afterward.**
+7. **At the same time**, while downloading register at NVIDIA, **download CUDNN 5 runtinme lib** on your local machine and SCP it to the remote instance. **This is going to take a while (10min depends on your upload speed), so go to step 10 afterward.**
     1. First download on Nvidia's website
     2. do:
         ```bash
@@ -75,8 +75,8 @@ This also means that you can't use pre-built AMI or docker images.
         ```
         
 8. Now make the runfile executable and install CUDA but don’t install the driver. 
-    - **IMPORTANT**: –override option helps to prevent some annoying errors, which could happen.
-    - **IMPORTANT**: Be sure to use the –no-opengl-libs option
+    - **IMPORTANT**: `–-override` option helps to prevent some annoying errors, which could happen.
+    - **IMPORTANT**: Be sure to use the `–no-opengl-libs option`
 
     ```bash
     chmod +x cuda_8.0.44_linux-run
