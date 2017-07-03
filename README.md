@@ -9,7 +9,9 @@ My notes on reinforcement learning
 
 ### Done
 
-- [x] setup OpenAI Gym on AWS (yay!)
+- [x] setup OpenAI Gym on AWS (yay!:confetti_ball:)
+- [x] install `MuJoCo` :confetti_ball:
+- [x] install `mujoco-py` (why is this so hard...)
 
 ### In Progress
 - [ ] Finish David Silver's RL course [index](david%20silver%20RL%20course/course%20index.md)
