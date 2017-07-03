@@ -136,7 +136,7 @@ This also means that you can't use pre-built AMI or docker images.
     ```
 14. This is the easy part: install tensorflow
     ```bash
-    python3.5 -m pip install /tmp/tensorflow_pkg/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl
+    python3.5 -m pip install /tmp/tensorflow_pkg/tensorflow-1.2.0-cp35-cp35m-linux_x86_64.whl 
     ```
     
 ## Install OpenAI Gym:
