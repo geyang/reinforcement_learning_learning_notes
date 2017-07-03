@@ -55,11 +55,46 @@ Markov process with value judgements.
 
 
 
-> The state value function $v(s)$ is the expected return starting from state s:
+### Value Function
+
+> The *state value function $v(s)$* is the expected return starting from state s:
 > $$
->
 > v(s) = \langle G_t \vert S_t = s\rangle
->
 > $$
 >
 
+
+
+### Bellman Equation for MRPs
+
+- immediate reward $R_{t+1}$ 
+- discuouted successor rewards $\gamma \,V(S_{t+1})$ 
+
+$$
+V(s) = \langle R_{t+1} + \gamma v(S_{t+1}) \vert _{S_t = s} \rangle
+$$
+
+> the index $t+1$ is arbitrary. 
+
+$$
+V(s) = R{t} + \gamma \sum_{s' \in S} P_{s,s'} V(s')
+$$
+
+Matrix Formulation:
+$$
+\vec v = \vec R + \gamma P\cdot \vec v
+$$
+Linear solution to Bellman's equation: 
+$$
+V = (I - \gamma P)^{-1} \vec R
+$$
+
+- computation complexity is $O(n^3)$ for $n$ states
+- Iterative methods include
+  - Dynamic Programming
+  - Monte-Carlo evaluation
+  - Temporal-Difference Learning
+
+## MDP
+
+> A Markov Reward 

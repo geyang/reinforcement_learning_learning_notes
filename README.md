@@ -30,8 +30,18 @@ I found textbook to be the most reliable source, but there is usually too much m
     
 
 ## Reading List
+- [ ] 
 
 ### Done
 - [x] Contextual bandits: 
     - http://hunch.net/?p=298
     - https://getstream.io/blog/introduction-contextual-bandits/
+
+## Research Ideas
+
+- Curiosity as reward
+- Finding answers as reward
+- inferring intention
+- Learning to predict (lots of prior art. self-supervision)
+- Auxiliary supervision and Auxiliary modalities.
+- inverse reinforcement learning != imitation learning
