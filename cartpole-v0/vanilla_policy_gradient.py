@@ -7,12 +7,6 @@ import math
 import matplotlib.pyplot as plt
 
 
-def softmax(x):
-    e_x = np.exp(x - np.max(x))
-    out = e_x / e_x.sum()
-    return out
-
-
 def policy_gradient():
     """usage:
 
@@ -42,7 +36,7 @@ def policy_gradient():
         integrant = eligibility * tf.reduce_sum(reward_placeholder, reduction_indices=1)
         loss = - tf.reduce_sum(integrant)
 
-        optimizer = tf.train.AdamOptimizer(0.01).minimize(loss)
+        optimizer = tf.train.AdamOptimizer(0.1).minimize(loss)
         return prob_action, state, actions_placeholder, \
                reward_placeholder, optimizer, \
                [action_likelihood, loss]
@@ -54,7 +48,7 @@ def run_episode(env, sess, state_ph, p_action, sleep=0):
     actions = []
     rewards = []
 
-    for _ in range(200):
+    for _ in range(MAX_STEPS - 1):
         a_p, *_ = sess.run(p_action, feed_dict={state_ph: [s]})
         rand = np.random.random()
         a = 0 if rand <= a_p[0] else 1
@@ -74,28 +68,33 @@ def run_episode(env, sess, state_ph, p_action, sleep=0):
     return states[:-1], actions, rewards
 
 
+MAX_STEPS = 5000
 env = gym.make('CartPole-v0')
+env._max_episode_steps = MAX_STEPS
 
-DEBUG = False
+DEBUG = True
 
 gamma = 0.99
 
 p_action, state_ph, actions_pl, rewards_pl, adam, etc = policy_gradient()
 
+episode_lens = []
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(100000):
         states, actions, rewards = run_episode(env, sess, state_ph, p_action, sleep=0.01)
         # Now run optimizer
-        *_, loss_val, = \
+        *_, loss_val = \
             sess.run([p_action, adam, *etc],
                      feed_dict={state_ph: states,
                                 actions_pl: actions,
                                 # rewards_pl: np.array([rewards]).T})
                                 rewards_pl: np.array([
-                                    list(map(lambda kv: (gamma ** (len(rewards) - kv[0]) - 1)/(gamma - 1), enumerate(rewards)))
+                                    list(map(lambda kv: (gamma ** (len(rewards) - kv[0]) - 1) / (gamma - 1),
+                                             enumerate(rewards)))
                                 ]).T})
+        episode_lens.append(len(rewards))
         print(len(rewards), loss_val)
-        if len(rewards) > 20 and np.mean(rewards[-20:]) >= 199:
+        if len(episode_lens) > 20 and np.mean(episode_lens[-20:]) >= (MAX_STEPS - 1):
             print("finished after {} steps".format(i))
             break
