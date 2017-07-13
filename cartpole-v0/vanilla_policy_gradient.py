@@ -5,6 +5,7 @@ import random
 import gym
 import math
 import matplotlib.pyplot as plt
+import helpers
 
 
 def policy_gradient():
@@ -36,7 +37,7 @@ def policy_gradient():
         integrant = eligibility * tf.reduce_sum(reward_placeholder, reduction_indices=1)
         loss = - tf.reduce_sum(integrant)
 
-        optimizer = tf.train.AdamOptimizer(0.1).minimize(loss)
+        optimizer = tf.train.AdamOptimizer(0.05).minimize(loss)
         return prob_action, state, actions_placeholder, \
                reward_placeholder, optimizer, \
                [action_likelihood, loss]
@@ -44,6 +45,8 @@ def policy_gradient():
 
 def run_episode(env, sess, state_ph, p_action, sleep=0):
     s = env.reset()
+    env._max_episode_steps = MAX_STEPS
+
     states = [s]
     actions = []
     rewards = []
@@ -68,20 +71,20 @@ def run_episode(env, sess, state_ph, p_action, sleep=0):
     return states[:-1], actions, rewards
 
 
-MAX_STEPS = 5000
+DEBUG = False
+SAVE_EXPERT = True
+MAX_STEPS = 200
 env = gym.make('CartPole-v0')
-env._max_episode_steps = MAX_STEPS
-
-DEBUG = True
 
 gamma = 0.99
 
 p_action, state_ph, actions_pl, rewards_pl, adam, etc = policy_gradient()
 
+expert_data = []
 episode_lens = []
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    for i in range(100000):
+    for i in range(50):
         states, actions, rewards = run_episode(env, sess, state_ph, p_action, sleep=0.01)
         # Now run optimizer
         *_, loss_val = \
@@ -94,7 +97,11 @@ with tf.Session() as sess:
                                              enumerate(rewards)))
                                 ]).T})
         episode_lens.append(len(rewards))
-        print(len(rewards), loss_val)
+
+        if len(rewards) > (MAX_STEPS - 1) and SAVE_EXPERT:
+            expert_data.append(dict(states=states, actions=actions, rewards=rewards))
+        print(i, '\t', len(rewards))
         if len(episode_lens) > 20 and np.mean(episode_lens[-20:]) >= (MAX_STEPS - 1):
             print("finished after {} steps".format(i))
+            helpers.save('./expert/cartpole_vpc.tau', expert_data)
             break
