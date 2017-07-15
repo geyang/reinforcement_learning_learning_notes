@@ -7,8 +7,13 @@ This report contains the following explorations:
 4. Making the neural network deep
 
 ## TODOs
+
 - [ ] generate expert trajectories $\tau_{expert}$
+
+### Back-list
+
 - [ ] supervised learning from these expert trajectories
+- [ ] some nice visualizations, compare expert policy vs learned policy.
 
 ### Done
 - [x] Vanilla policy gradient
