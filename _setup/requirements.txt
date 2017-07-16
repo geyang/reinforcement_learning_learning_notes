@@ -1,0 +1,9 @@
+numpy
+scipy
+matplotlib
+pandas
+jupyter
+jupyterlab
+ruamel.yaml
+pytest
+# run make install-gym afterward.
