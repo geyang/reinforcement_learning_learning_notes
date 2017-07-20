@@ -9,9 +9,9 @@ learn_writer = tf.summary.FileWriter('/tmp/tensorflow/pendulum-v0/advantage/lear
 m = Moleskin()
 
 
-def variable_summaries(var):
+def variable_summaries(var, scope_name='Summaries'):
     """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-    with tf.name_scope('summaries'):
+    with tf.name_scope(scope_name):
         with tf.name_scope("mean"):
             mean = tf.reduce_mean(var)
         with tf.name_scope('stddev'):
@@ -62,21 +62,28 @@ def scalar_summary(name, shape):
         return ph
 
 
-def surrogate(elgb, reward_ph, scope_name="surrogate_loss"):
+def surrogate(elgb, advantage, scope_name="surrogate_loss"):
     with tf.name_scope(scope_name):
-        surrogate_loss = tf.multiply(elgb, reward_ph)
+        surrogate_loss = tf.multiply(elgb, advantage)
         loss = - tf.reduce_mean(surrogate_loss)
         # scalar_summary(loss)
         return loss
 
 
-def value_function(state_ph, scope_name="Value_Network"):
+def value_function(state_ph, rewards_ph, value_lr, scope_name="Value_Network"):
     with tf.name_scope(scope_name):
         x = state_ph
         x = dense(40, x, scope_name="layer_1", nonlin=True)
         x = dense(20, x, scope_name="layer_2", nonlin=True)
         x = dense(1, x, scope_name="layer_3", nonlin=True)
-        return x
+
+        with tf.name_scope('optimizer'):
+            loss = tf.abs(rewards_ph - x)
+            optimizer = tf.train.AdamOptimizer(value_lr).minimize(loss)
+
+        variable_summaries(loss)
+
+        return x, optimizer
 
 
 def policy_gradient():
@@ -90,7 +97,8 @@ def policy_gradient():
     """
     with tf.name_scope("vanilla_policy_gradient"):
         # Placeholders
-        lr_placeholder = tf.placeholder('float', [], name='Learning_Rate')
+        lr_placeholder = tf.placeholder('float', [], name='Policy_Learning_Rate')
+        value_lr_placeholder = tf.placeholder('float', [], name='Value_Learning_Rate')
         state_placeholder = tf.placeholder("float", [None, 3], name='IN_State')
         actions_placeholder = tf.placeholder("float", [None, 1], name='IN_Action')
         reward_placeholder = tf.placeholder("float", [None, 1], name='IN_Reward')
@@ -98,26 +106,29 @@ def policy_gradient():
         with tf.name_scope('mu_NET'):
             x = state_placeholder
             x = dense(40, x, scope_name='layer_1', nonlin=True)
-            x = dense(40, x, scope_name='layer_2', nonlin=True)
-            x = dense(20, x, scope_name='layer_3', nonlin=True)
-            mu = dense(1, x, scope_name='layer_4')
+            # x = dense(40, x, scope_name='layer_2', nonlin=True)
+            # x = dense(20, x, scope_name='layer_3', nonlin=True)
+            mu = dense(1, x, scope_name='layer_2')
 
         with tf.name_scope('log_stddev_NET'):
             x = state_placeholder
-            x = dense(30, state_placeholder, scope_name='layer_1', nonlin=True)
-            x = dense(20, x, scope_name='layer_2', nonlin=True)
-            x = dense(20, x, scope_name='layer_3', nonlin=True)
-            x = dense(20, x, scope_name='layer_4', nonlin=True)
-            log_stddev = dense(1, x, scope_name='layer_5', nonlin=True)
+            # x = dense(30, state_placeholder, scope_name='layer_1', nonlin=True)
+            # x = dense(20, x, scope_name='layer_2', nonlin=True)
+            # x = dense(20, x, scope_name='layer_3', nonlin=True)
+            # x = dense(20, x, scope_name='layer_4', nonlin=True)
+            log_stddev = dense(1, state_placeholder, scope_name='layer_5', nonlin=True)
 
         action = sample_action(mu, log_stddev, state_placeholder)
 
-        value = value_function(state_placeholder)
+        value, value_optimizer = value_function(state_placeholder, reward_placeholder, value_lr_placeholder)
 
         # calculate eligibility
         elgb = eligibility(actions_placeholder, mu, log_stddev)
 
-        surrogate_loss = surrogate(elgb, reward_placeholder)
+        with tf.name_scope("advantage"):
+            advantage = reward_placeholder - value
+
+        surrogate_loss = surrogate(elgb, advantage)
         # variable_summaries(surrogate_loss)
 
         with tf.name_scope("optimizer"):
@@ -125,6 +136,7 @@ def policy_gradient():
 
         return action, \
                [state_placeholder, actions_placeholder, reward_placeholder], \
+               [value_lr_placeholder, value_optimizer], \
                [lr_placeholder, optimizer], \
                [surrogate_loss]
 
@@ -200,9 +212,10 @@ env = gym.make('Pendulum-v0')
 gamma = 0.9
 
 ctheta, stheta, thetadot, r_ph, a_ph = summarize_run()
-torque, placeholders, optim, etc = policy_gradient()
+torque, placeholders, value, policy, etc = policy_gradient()
 state_ph, actions_ph, rewards_ph = placeholders
-learning_rate, adam = optim
+value_learning_rate, value_optim = value
+learning_rate, adam = policy
 
 # run_config = tf.ConfigProto(log_device_placement=True)
 
@@ -217,20 +230,27 @@ with tf.Session(config=None) as sess:
     for ep_ind in range(100000):
         states, actions, rewards = run_episode(ep_ind, env, sess, merged_summary, state_ph, torque, sleep=0.05)
 
-        run_sum = tf.summary.merge_all()
-        run_sum_result = sess.run(run_sum, feed_dict={
-            ctheta: states[:, 0], stheta: states[:, 1], thetadot: states[:, 2],
-            r_ph: rewards, a_ph: actions[:, 0]
-        })
-        run_writer.add_summary(run_sum_result, ep_ind)
-
         avg_reward = sum(rewards) / len(rewards)
         episode_rewards.append(avg_reward)
         # Now run optimizer
         run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         run_metadata = tf.RunMetadata()
 
-        rewards_vector = to_values(rewards)
+        value_vector = to_values(rewards)
+
+        run_sum = tf.summary.merge_all()
+        run_sum_result, _ = sess.run(
+            [run_sum, value_optim],
+            feed_dict={
+                ctheta: states[:, 0], stheta: states[:, 1], thetadot: states[:, 2], r_ph: rewards, a_ph: actions[:, 0],
+                state_ph: states, rewards_ph: np.expand_dims(value_vector, axis=1),
+                value_learning_rate: 1e-2,
+            },
+            options=run_options,
+            run_metadata=run_metadata
+        )
+
+        run_writer.add_summary(run_sum_result, ep_ind)
 
         *_, loss_val = \
             sess.run([torque, adam, *etc],
@@ -238,17 +258,17 @@ with tf.Session(config=None) as sess:
                          learning_rate: lr,
                          state_ph: states,
                          actions_ph: actions,
-                         # rewards_ph: np.array([rewards]).T})
-                         rewards_ph: np.expand_dims(rewards_vector, axis=1)},
+                         rewards_ph: np.expand_dims(value_vector, axis=1)},
                      options=run_options,
                      run_metadata=run_metadata
                      )
+
         # learn_writer.add_summary(summary)
         if ep_ind % 50 == 10:
             lr /= 1.5
-        if ep_ind > 100:
+        if ep_ind > 1000:
             DEBUG = True
-        if episode_rewards[-1] >= -3:
+        if episode_rewards[-1] >= -1:
             DEBUG = True
         print(ep_ind, '\t', avg_reward, '\t{:1.4f}'.format(lr))
         if len(episode_rewards) > 20 and np.mean(episode_rewards[-20:]) >= (MAX_STEPS - 1):

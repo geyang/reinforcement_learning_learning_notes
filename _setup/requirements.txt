@@ -7,3 +7,4 @@ jupyterlab
 ruamel.yaml
 pytest
 # run make install-gym afterward.
+moleskin
