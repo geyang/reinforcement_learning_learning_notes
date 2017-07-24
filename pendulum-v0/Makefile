@@ -37,8 +37,8 @@ pre-run:
 	RUN_BRANCH=$(RUN_BRANCH) && \
 	git add . && \
 	git commit -m "escher-run-$${RUN_ID}" && \
-	git push $(RUN_REMOTE) $(RUN_BRANCH) -f && \
 	git checkout -b $${RUN_BRANCH} && \
+	git push $(RUN_REMOTE) $(RUN_BRANCH) -f && \
 	git checkout master && \
 	git reset HEAD~
 	# <<<<<<<
