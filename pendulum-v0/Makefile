@@ -29,11 +29,15 @@ pre-run:
 	CURRENT_BRANCH=$(CURRENT_BRANCH) && \
 	RUN_ID=$$(date +'%Y%m%d-%H%M%S') \
 	RUN_BRANCH=$(RUN_BRANCH) && \
-	git co -b $${RUN_BRANCH} && \
+	git checkout -b $${RUN_BRANCH} && \
 	git add . && \
 	git commit -m $$RUN_BRANCH} && \
-	git push escher $(RUN_BRANCH) -f && \
-	git co master && \
+	git push $(RUN_REMOTE) $(RUN_BRANCH) -f && \
+	git checkout master && \
 	git merge --no-commit --squash ${RUN_BRANCH} && \
 	git reset HEAD # to unstage the changes && \
 	git branch -D $${RUN_BRANCH}
+fix-run:
+	git checkout master && \
+	git merge --no-commit --squash ${RUN_BRANCH} && \
+	git reset HEAD # to unstage the changes
