@@ -37,7 +37,3 @@ pre-run:
 	git merge --no-commit --squash ${RUN_BRANCH} && \
 	git reset HEAD # to unstage the changes && \
 	git branch -D $${RUN_BRANCH}
-fix-run:
-	git checkout master && \
-	git merge --no-commit --squash ${RUN_BRANCH} && \
-	git reset HEAD # to unstage the changes
