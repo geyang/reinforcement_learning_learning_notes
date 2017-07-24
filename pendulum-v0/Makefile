@@ -27,6 +27,7 @@ setup-escher-remote:
 	git push escher master
 pre-run:
 	# Newer version:
+	# This has the benefit that 1. does not refresh files, 2.
 	# 1. commit to master
 	# 2. checkout new branch escher-run-<run-id>
 	# 3. checkout master
@@ -36,6 +37,7 @@ pre-run:
 	RUN_BRANCH=$(RUN_BRANCH) && \
 	git add . && \
 	git commit -m "escher-run-$${RUN_ID}" && \
+	git push $(RUN_REMOTE) $(RUN_BRANCH) -f && \
 	git checkout -b $${RUN_BRANCH} && \
 	git checkout master && \
 	git reset HEAD~
