@@ -1,4 +1,0 @@
-# your vnc ip address
-export IP_ADDRESS=192.168.0.0
-export VNC_PORT=0000
-export VNC_PASSWORD=11111
