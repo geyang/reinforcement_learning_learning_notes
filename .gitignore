@@ -2,3 +2,9 @@
 .ipynb_checkpoints
 
 backlog
+
+# instance files
+ip_address.txt
+
+courses/reinforcement-learning-master
+gym-sessions/baselines

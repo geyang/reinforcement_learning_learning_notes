@@ -4,7 +4,13 @@ import numpy as np
 
 
 class VPG:
-    def __init__(self, ob_size, ac_size, ac_is_descrete):
+    def __init__(self, ob_size, ac_size, ac_is_descrete, RUN_ID, ENV):
+        self.sess = tf.Session()
+        self.writer = tf.summary.FileWriter(
+            '/tmp/tensorflow/{ENV}/advantage/{RUN_ID}/'.format(RUN_ID=RUN_ID, ENV=ENV))
+        self.writer.add_graph(self.sess.graph)
+        self.logs = tf_helpers.Log(self.writer)
+
         with tf.name_scope("vanilla_policy_gradient"):
             # Placeholders
             self.lr_placeholder = tf.placeholder('float', [], name='Policy_Learning_Rate')
@@ -49,8 +55,7 @@ class VPG:
             with tf.name_scope("optimizer"):
                 self.optimizer = tf.train.AdamOptimizer(self.lr_placeholder).minimize(self.surrogate_loss)
 
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
+            self.sess.run(tf.global_variables_initializer())
 
     def act(self, ob):
         acs, vpreds = self.sess.run(
@@ -125,7 +130,6 @@ class VPG:
         with tf.name_scope(scope_name):
             surrogate_loss = tf.multiply(elgb, advantage)
             loss = - tf.reduce_mean(surrogate_loss)
-            # scalar_summary(loss)
             return loss
 
     @staticmethod
