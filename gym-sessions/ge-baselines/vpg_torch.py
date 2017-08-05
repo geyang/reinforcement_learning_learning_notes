@@ -75,32 +75,36 @@ class VPG(nn.Module):
         # self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
 
     @staticmethod
-    def discrete_action(mu, flag=None):
+    def discrete_sampling(mu, flag=None):
         """Only supports bernoulli distribution. Does not support categorical distribution."""
         # Use an energy calculation for the probability
         probs = F.softmax(mu)
-        # probs = torch.exp(mu)
-        # z = torch.sum(probs, dim=1).expand_as(mu)
-        # probs = probs / z
         if flag == 'probs_only':
             return probs
         acts = torch.multinomial(probs, 1)
         return torch.squeeze(acts, dim=1), probs
 
     @staticmethod
-    def guassian_action(mu, log_stddev, scope_name="sample_action"):
-        with tf.name_scope(scope_name):
-            SHAPE = tf.shape(mu)
-            action = (tf.random_normal(SHAPE) + mu) / (2 * tf.exp(log_stddev * 2))
-        return action
+    def gaussian_sampling(mu, log_stddev, flag=None):
+        zeros = torch.zeros(mu.size())
+        ones = torch.ones(mu.size())
+        epsilon = Variable(torch.normal(zeros, ones))
+        stddev = torch.exp(log_stddev)
+        # sample
+        action = torch.mul(epsilon, stddev) + mu
+        # compute sample probability
+        act_probs = epsilon / (2. * np.exp(1. * 2.))
+        return action, act_probs
 
     def act(self, obs):
         obs = h.varify(obs, volatile=True)  # use as inference mode.
         mus, stddev = self.action(obs)
         if self.action_type == 'linear':
-            acts, act_probs = self.discrete_action(mus)
+            acts, act_probs = self.discrete_sampling(mus)
         elif self.action_type == 'gaussian':
-            acts = self.sample_action(mus, stddev)
+            acts, act_probs = self.gaussian_sampling(mus, stddev)
+        else:
+            raise Exception('action_type {} is not supported'.format(self.action_type))
         return acts, act_probs
 
     def learn_value(self, obs, vals, lr):
@@ -114,18 +118,26 @@ class VPG(nn.Module):
         loss.backward()
         self.value_fn.optimizer.step()
 
-    def learn(self, obs, acts, vals, lr, use_baseline=False):
+    def learn(self, obs, acts, vals, lr, normalize=False, use_baseline=False):
         obs = h.varify(obs)
-        acts = h.tensorify(acts, type='int')
+        if self.action_type == 'linear':
+            acts = h.tensorify(acts, type='int')
+        elif self.action_type == 'gaussian':
+            acts = h.tensorify(acts, type='float')
         if use_baseline:
             vals = h.varify(vals) - self.value_fn(obs)
         else:
             vals = h.varify(vals)
+        if normalize:
+            vals = (vals - torch.mean(vals, dim=0).expand_as(vals)) / (torch.std(vals, dim=0) + 1e-8).expand_as(vals)
         self.action.set_lr(lr)
         self.action.optimizer.zero_grad()
-        mu, _ = self.action(obs)
+        mu, stddev = self.action(obs)
         # todo: problem: different parts of the comp graph got complicated.
-        act_probs = self.discrete_action(mu, 'probs_only')
+        if self.action_type == 'linear':
+            act_probs = self.discrete_sampling(mu, 'probs_only')
+        elif self.action_type == "gaussian":
+            act_probs = self.gaussian_sampling(mu, stddev, 'probs_only')
         # discrete action space only
         assert len(acts.size()) == 1, "acts should be a batch of scalars"
         assert len(act_probs.size()) == 2, "act_probs should be a batch of 1d tensor"
