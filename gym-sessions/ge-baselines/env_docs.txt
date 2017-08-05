@@ -1,0 +1,50 @@
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0	[32mDiscrete(4)[0m
+CartPole-v0	[32mDiscrete(2)[0m
+Pendulum-v0	[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m

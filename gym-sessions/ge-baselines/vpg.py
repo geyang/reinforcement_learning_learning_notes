@@ -4,7 +4,11 @@ import numpy as np
 
 
 class VPG:
-    def __init__(self, ob_size, ac_size, ac_is_descrete, RUN_ID, ENV):
+    def __init__(self, ob_size, ac_size, ac_is_discrete, RUN_ID, ENV):
+        self.ac_size = ac_size
+        self.discrete_features = 2
+        self.ac_is_discrete = ac_is_discrete
+
         self.sess = tf.Session()
         self.writer = tf.summary.FileWriter(
             '/tmp/tensorflow/{ENV}/advantage/{RUN_ID}/'.format(RUN_ID=RUN_ID, ENV=ENV))
@@ -17,19 +21,18 @@ class VPG:
             self.value_lr_placeholder = tf.placeholder('float', [], name='Value_Learning_Rate')
             self.state_placeholder = tf.placeholder("float", [None, ob_size], name='IN_State')
             self.actions_placeholder = tf \
-                .placeholder(tf.int32 if ac_is_descrete else "float", [None, ac_size], name='IN_Action')
+                .placeholder(tf.int32 if ac_is_discrete else "float", [None, ac_size], name='IN_Action')
             self.reward_placeholder = tf.placeholder("float", [None, 1], name='IN_Reward')
 
             with tf.name_scope('mu_NET'):
                 x = self.state_placeholder
-                x = tf_helpers.dense(2, x, scope_name='layer_1', nonlin='sigmoid')
+                # x = tf_helpers.dense(2, x, scope_name='layer_1', nonlin='sigmoid')
                 # x = tf_helpers.dense(128, x, scope_name='layer_2', nonlin='relu')
                 # x = tf_helpers.dense(128, x, scope_name='layer_3', nonlin='relu')
-                mu = tf_helpers.dense(1, x, scope_name='layer_4', nonlin='tanh')
+                mu = tf_helpers.dense(self.discrete_features or ac_size, x, scope_name='layer_4', nonlin=None)
 
-            if ac_is_descrete:
+            if ac_is_discrete:
                 self.action, self.action_probs = self.discrete_action(mu)
-
                 # calculate eligibility
                 self.eligibility = self.discrete_eligibility_fn(self.actions_placeholder, self.action_probs)
             else:
@@ -91,12 +94,13 @@ class VPG:
 
     @staticmethod
     def discrete_action(mu, scope_name="sample_action"):
+        """Only supports bernoulli distribution. Does not support categorical distribution."""
         with tf.name_scope(scope_name):
-            # mu is the hyper-tangent function, from -1 to 1.
-            probs = (1 + mu) / 2
-            SHAPE = tf.shape(probs)
+            # probs is the bernoulli or categorical distribution
+            probs = mu / tf.expand_dims(tf.reduce_sum(mu, axis=1), axis=1)
+            SHAPE = tf.shape(probs[:, 0])
             # this is a bernoulli distribution. Use tf.int32 for the output.
-            action = tf.where(tf.random_uniform(SHAPE) - probs < 0,
+            action = tf.where((tf.random_uniform(SHAPE) - probs[:, 0]) < 0,
                               tf.ones(SHAPE, tf.int32),
                               tf.zeros(SHAPE, tf.int32))
             # action = tf.contrib.distributions.Bernoulli(probs=probs)

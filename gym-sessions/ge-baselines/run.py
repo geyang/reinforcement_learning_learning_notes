@@ -1,13 +1,10 @@
+import torch
+import torch_helpers as h
 import gym, os
 import numpy as np
 from moleskin import Moleskin
 
-import vpg
-
-MAX_STEPS = 200
-TRAIN_BIAS = 4
-ENV = "CartPole-v0"
-RUN_ID = os.environ['RUN_ID']
+from vpg_torch import VPG
 
 
 class GymSession:
@@ -19,53 +16,77 @@ class GymSession:
         states = []
         actions = []
         rewards = []
-        preds = []
         ob = self.env.reset()
         states.append(ob)
-        for step in range(200):
-            acs, vpreds = self.algo.act([ob])
-            ob, r, done, _ = self.env.step(acs[0][0])
+        for step in range(env._max_episode_steps):
+            acs, act_probs = self.algo.act([ob])  # use batch as default
+            action = acs.data.numpy()[0]
+            ob, r, done, _ = self.env.step(action)  #
             states.append(ob)
-            rewards.append([r])
-            actions.append(acs[0])
-            preds.append(vpreds[0])
+            rewards.append(r)
+            actions.append(action)
             if done:
                 break
 
         return states[:-1], actions, rewards
 
-    def value_iteration(self, *args):
-        self.algo.learn_value_function(*args)
+    def value_iteration(self, *args, **kwargs):
+        self.algo.learn_value(*args, **kwargs)
 
-    def policy_iteration(self, *args):
-        self.algo.learn(*args)
+    def policy_iteration(self, *args, **kwargs):
+        self.algo.learn(*args, **kwargs)
+
+    @staticmethod
+    def reward_to_value(rewards: list,
+                        gamma: float = 1.0) -> list:  # note: it is debatable if list is a good design here.
+        """return value from rewards"""
+        assert 0 < gamma <= 1.0, 'gamma has to be between 0 and 1 (inclusive)'
+        assert type(rewards[0]) == float, 'reward should be a list of floats'
+        n = len(rewards)
+        R = 0
+        vals = []
+        for i in range(1, n + 1):
+            R = gamma * R + rewards[-i]
+            vals.insert(0, R)
+        return vals
 
 
-m = Moleskin()
-LR = 1e-5
 if __name__ == "__main__":
-    env = gym.make(ENV)
-    # action space is discrete if no `shape` attribute
-    if hasattr(env.action_space, 'shape'):
-        ac_size = env.action_space.shape[0]
-        is_discrete = False
-    else:
-        is_discrete = True
-        ac_size = 1
-    ob_size = env.observation_space.shape[0]
-    with vpg.VPG(ob_size, ac_size, is_discrete, RUN_ID, ENV) as algo:
-        sess = GymSession(env, algo)
-        for ind_epoch in range(50):
-            obs, acs, rs = sess.run_episode()
-            algo.logs.scaler(np.sum(rs), ind_epoch)
-            algo.logs.histogram(acs, ind_epoch, bins=10)
-            rewards = np.expand_dims(list(range(len(rs)))[::-1], axis=1)
-            for _ in range(1):
-                sess.value_iteration(obs, rewards, acs, LR)
-            for _ in range(1):
-                sess.policy_iteration(obs, rewards, acs, LR)
+    M = Moleskin()
+    LR = 1e-5
+    MAX_STEPS = 2000
+    TRAIN_BIAS = 4
+    ENV = "CartPole-v0"
+    RUN_ID = os.environ['RUN_ID']
 
-            m.green(np.sum(rs), end="")
-            # m.red('\tmean', np.mean(acs), end="")
-            # m.yellow('\tvariance', np.mean((acs - np.mean(acs)) ** 2))
-            print('\r', end='')
+    env = gym.make(ENV)
+    env._max_episode_steps = MAX_STEPS
+    # action space is discrete if no `shape` attribute
+    if type(env.action_space) is gym.spaces.discrete.Discrete:
+        is_discrete = True
+        ac_size = env.action_space.n
+    elif type(env.action_space) is gym.spaces.box.Box:
+        is_discrete = False
+        # Box
+        ac_size = env.action_space.shape[0]
+    else:
+        raise Exception('Enviroment {} is unsupported'.format(env))
+
+    ob_size = env.observation_space.shape[0]
+    with VPG(ob_size, ac_size, 'linear', run_id=RUN_ID, env=ENV) as algo:
+        sess = GymSession(env, algo)
+        for ind_epoch in range(5000):
+            obs, acts, rs = sess.run_episode()
+            # vals = sess.reward_to_value(rs, 0.5)
+            # sess.value_iteration(obs, vals, 1e-3)
+            # if ind_epoch > 2000:
+            #     sess.policy_iteration(obs, acts, rs, 5e-2, use_baseline=False)
+            sess.policy_iteration(obs, acts, np.array(rs) * len(rs), 2e-2, use_baseline=False)
+
+            M.white("#", ind_epoch, end="\t")
+            M.print("action: ", end="\t")
+            M.red(acts[0], end="\t")
+            M.print("steps: ", end="\t")
+            M.green(np.sum(rs), end="\t")
+            M.print("action mean: ", end="\t")
+            M.red("{:.2f}".format(np.mean(acts)), end="\n")
