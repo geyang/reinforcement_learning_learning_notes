@@ -56,10 +56,10 @@ class GymSession:
 if __name__ == "__main__":
     M = Moleskin()
     LR = 1e-5
-    MAX_STEPS = 2000
+    MAX_STEPS = 200
     TRAIN_BIAS = 4
-    ENV = "CartPole-v0"
-    # ENV = "Pendulum-v0"
+    # ENV = "CartPole-v0"
+    ENV = "Pendulum-v0"
     RUN_ID = os.environ['RUN_ID']
 
     env = gym.make(ENV)
@@ -79,13 +79,13 @@ if __name__ == "__main__":
         sess = GymSession(env, algo)
         for ind_epoch in range(5000):
             obs, acts, rs = sess.run_episode(render=False)
-            vals = sess.reward_to_value(rs, 0.95)
+            vals = sess.reward_to_value(rs, 0.5)
             # if ind_epoch > 500:
             # if ind_epoch % 5 == 0:
-            sess.value_iteration(obs, vals, 5e-3)
-            sess.policy_iteration(obs, acts, vals, 5e-1,
+            # sess.value_iteration(obs, vals, 1e-4)
+            sess.policy_iteration(obs, acts, vals, 5e-4,
                                   normalize=True,
-                                  use_baseline=True)
+                                  use_baseline=False)
             # sess.policy_iteration(obs, acts, np.array(rs) * len(rs), 2e-2, use_baseline=False)
 
             M.white("#", ind_epoch, end="\t")

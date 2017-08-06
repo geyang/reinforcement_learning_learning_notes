@@ -16,8 +16,10 @@ class Action(nn.Module):
         self.action_type = action_type
 
         if action_type == 'gaussian':
-            self.mu_fc = nn.Linear(input_size, ac_size)
-            self.stddev_fc = nn.Linear(input_size, ac_size)
+            self.mu_fc1 = nn.Linear(input_size, 28)
+            self.mu_fc2 = nn.Linear(28, ac_size)
+            self.stddev_fc1 = nn.Linear(input_size, 28)
+            self.stddev_fc2 = nn.Linear(28, ac_size)
         elif action_type == 'linear':
             # todo: make action configurable
             self.mu_fc = nn.Linear(input_size, ac_size)
@@ -31,12 +33,14 @@ class Action(nn.Module):
     def forward(self, x):
         mu, stddev = [x] * 2
         assert len(mu.size()) == 2, 'mu should be a 2D tensor with batch_index first.'
-        mu = self.mu_fc(mu)
         if self.action_type == "gaussian":
-            # todo: need tested
-            stddev = F.softmax(self.stddev_fc(stddev))
+            mu = F.leaky_relu(self.mu_fc1(mu), 0.05)
+            mu = self.mu_fc2(mu)
+            stddev = F.leaky_relu(self.stddev_fc1(stddev), 0.05)
+            stddev = self.stddev_fc2(stddev)
             return mu, stddev
         elif self.action_type == "linear":
+            mu = self.mu_fc(mu)
             return mu, None
 
 
@@ -136,7 +140,6 @@ class VPG(nn.Module):
 
     def learn(self, obs, acts, vals, lr, normalize=False, use_baseline=False):
         obs = h.varify(obs)
-        acts = h.varify(acts, dtype='int')
         if use_baseline:
             vals = h.varify(vals) - self.value_fn(obs)
         else:
@@ -148,8 +151,10 @@ class VPG(nn.Module):
         mu, stddev = self.action(obs)
         # todo: problem: different parts of the comp graph got complicated.
         if self.action_type == 'linear':
+            acts = h.varify(acts, dtype='int')
             sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts)
         elif self.action_type == "gaussian":
+            acts = h.varify(acts, dtype='float')
             sampled_act_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
         # eligibility is the derivative of log_probability
         log_probability = torch.log(sampled_act_probs) - 1e-6
