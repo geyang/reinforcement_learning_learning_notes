@@ -12,16 +12,18 @@ class GymSession:
         self.env = environment
         self.algo = algorithm
 
-    def run_episode(self):
+    def run_episode(self, render=False):
         states = []
         actions = []
         rewards = []
         ob = self.env.reset()
         states.append(ob)
         for step in range(env._max_episode_steps):
-            acs, act_probs = self.algo.act([ob])  # use batch as default
+            acs = self.algo.act([ob])  # use batch as default
             action = acs.data.numpy()[0]
             ob, r, done, _ = self.env.step(action)  #
+            if render:
+                env.render()
             states.append(ob)
             rewards.append(r)
             actions.append(action)
@@ -41,7 +43,7 @@ class GymSession:
                         gamma: float = 1.0) -> list:  # note: it is debatable if list is a good design here.
         """return value from rewards"""
         assert 0 < gamma <= 1.0, 'gamma has to be between 0 and 1 (inclusive)'
-        assert type(rewards[0]) == float, 'reward should be a list of floats'
+        assert type(rewards[0]) in [float, np.float16, np.float32, np.float64], 'reward should be a list of floats'
         n = len(rewards)
         R = 0
         vals = []
@@ -57,31 +59,34 @@ if __name__ == "__main__":
     MAX_STEPS = 2000
     TRAIN_BIAS = 4
     ENV = "CartPole-v0"
+    # ENV = "Pendulum-v0"
     RUN_ID = os.environ['RUN_ID']
 
     env = gym.make(ENV)
     env._max_episode_steps = MAX_STEPS
     # action space is discrete if no `shape` attribute
     if type(env.action_space) is gym.spaces.discrete.Discrete:
-        is_discrete = True
-        ac_size = env.action_space.n
+        ac_type = 'linear'
+        ac_size = env.action_space.n  # Discrete
     elif type(env.action_space) is gym.spaces.box.Box:
-        is_discrete = False
-        # Box
-        ac_size = env.action_space.shape[0]
+        ac_type = 'gaussian'
+        ac_size = env.action_space.shape[0]  # Box
     else:
         raise Exception('Enviroment {} is unsupported'.format(env))
 
     ob_size = env.observation_space.shape[0]
-    with VPG(ob_size, ac_size, 'linear', run_id=RUN_ID, env=ENV) as algo:
+    with VPG(ob_size, ac_size, ac_type, run_id=RUN_ID, env=ENV) as algo:
         sess = GymSession(env, algo)
         for ind_epoch in range(5000):
-            obs, acts, rs = sess.run_episode()
-            # vals = sess.reward_to_value(rs, 0.5)
-            # sess.value_iteration(obs, vals, 1e-3)
-            # if ind_epoch > 2000:
-            #     sess.policy_iteration(obs, acts, rs, 5e-2, use_baseline=False)
-            sess.policy_iteration(obs, acts, np.array(rs) * len(rs), 2e-2, use_baseline=False)
+            obs, acts, rs = sess.run_episode(render=False)
+            vals = sess.reward_to_value(rs, 0.95)
+            # if ind_epoch > 500:
+            # if ind_epoch % 5 == 0:
+            sess.value_iteration(obs, vals, 5e-3)
+            sess.policy_iteration(obs, acts, vals, 5e-1,
+                                  normalize=True,
+                                  use_baseline=True)
+            # sess.policy_iteration(obs, acts, np.array(rs) * len(rs), 2e-2, use_baseline=False)
 
             M.white("#", ind_epoch, end="\t")
             M.print("action: ", end="\t")

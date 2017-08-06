@@ -31,7 +31,6 @@ class Action(nn.Module):
     def forward(self, x):
         mu, stddev = [x] * 2
         assert len(mu.size()) == 2, 'mu should be a 2D tensor with batch_index first.'
-        # mu = F.softmax(self.mu_fc(mu))
         mu = self.mu_fc(mu)
         if self.action_type == "gaussian":
             # todo: need tested
@@ -75,33 +74,54 @@ class VPG(nn.Module):
         # self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
 
     @staticmethod
-    def discrete_action(mu, flag=None):
+    def discrete_sampling(mu, sampled_acts=None):
         """Only supports bernoulli distribution. Does not support categorical distribution."""
         # Use an energy calculation for the probability
         probs = F.softmax(mu)
-        # probs = torch.exp(mu)
-        # z = torch.sum(probs, dim=1).expand_as(mu)
-        # probs = probs / z
-        if flag == 'probs_only':
-            return probs
-        acts = torch.multinomial(probs, 1)
-        return torch.squeeze(acts, dim=1), probs
+        if sampled_acts is not None:
+            # enforce sampled_acts being a variable
+            assert isinstance(sampled_acts, Variable), "acts should be a Variable"
+            sampled_acts.requires_grad = False
+            assert len(sampled_acts.size()) == 1, "acts should be a batch of scalars"
+            assert len(probs.size()) == 2, "act_probs should be a batch of 1d tensor"
+            sampled_probs = h.sample_probs(probs, sampled_acts)
+            return sampled_probs
+        else:  # sample
+            draws = torch.multinomial(probs, num_samples=1)
+            sampled_acts = torch.squeeze(draws, dim=-1)
+            return sampled_acts
 
     @staticmethod
-    def guassian_action(mu, log_stddev, scope_name="sample_action"):
-        with tf.name_scope(scope_name):
-            SHAPE = tf.shape(mu)
-            action = (tf.random_normal(SHAPE) + mu) / (2 * tf.exp(log_stddev * 2))
-        return action
+    def gaussian_sampling(mu, log_stddev, sampled_acts: Variable = None):
+        if sampled_acts is not None:
+            # use externally fed samples, enables REINFORCE with samples generated from a different policy
+            # enforce sampled_acts being a variable
+            assert isinstance(sampled_acts, Variable), "acts should be a Variable"
+            sampled_acts.requires_grad = False
+            # todo: use exp to improve numerical performance
+            epsilon = (sampled_acts - mu) / torch.exp(log_stddev)
+            # compute sample probability
+            sampled_probs = epsilon / (2. * np.exp(1. * 2.))
+            return sampled_probs
+        else:
+            zeros = torch.zeros(mu.size())
+            ones = torch.ones(mu.size())
+            epsilon = Variable(torch.normal(zeros, ones))
+            # sample
+            stddev = torch.exp(log_stddev)
+            sampled_action = torch.mul(epsilon, stddev) + mu
+            return sampled_action
 
     def act(self, obs):
         obs = h.varify(obs, volatile=True)  # use as inference mode.
         mus, stddev = self.action(obs)
         if self.action_type == 'linear':
-            acts, act_probs = self.discrete_action(mus)
+            acts = self.discrete_sampling(mus)
         elif self.action_type == 'gaussian':
-            acts = self.sample_action(mus, stddev)
-        return acts, act_probs
+            acts = self.gaussian_sampling(mus, stddev)
+        else:
+            raise Exception('action_type {} is not supported'.format(self.action_type))
+        return acts
 
     def learn_value(self, obs, vals, lr):
         # b/c the value_fn is trained in a supervised fashion, we can do the forward/recompute each time.
@@ -114,27 +134,26 @@ class VPG(nn.Module):
         loss.backward()
         self.value_fn.optimizer.step()
 
-    def learn(self, obs, acts, vals, lr, use_baseline=False):
+    def learn(self, obs, acts, vals, lr, normalize=False, use_baseline=False):
         obs = h.varify(obs)
-        acts = h.tensorify(acts, type='int')
+        acts = h.varify(acts, dtype='int')
         if use_baseline:
             vals = h.varify(vals) - self.value_fn(obs)
         else:
             vals = h.varify(vals)
+        if normalize:
+            vals = (vals - torch.mean(vals, dim=0).expand_as(vals)) / (torch.std(vals, dim=0) + 1e-8).expand_as(vals)
         self.action.set_lr(lr)
         self.action.optimizer.zero_grad()
-        mu, _ = self.action(obs)
+        mu, stddev = self.action(obs)
         # todo: problem: different parts of the comp graph got complicated.
-        act_probs = self.discrete_action(mu, 'probs_only')
-        # discrete action space only
-        assert len(acts.size()) == 1, "acts should be a batch of scalars"
-        assert len(act_probs.size()) == 2, "act_probs should be a batch of 1d tensor"
-        act_oh = h.one_hot(acts, n=self.ac_size)
+        if self.action_type == 'linear':
+            sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts)
+        elif self.action_type == "gaussian":
+            sampled_act_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
         # eligibility is the derivative of log_probability
-        normalized_act_prob = act_probs.mul(act_oh).sum(dim=-1)
-        log_probability = torch.log(normalized_act_prob) - 1e-6
+        log_probability = torch.log(sampled_act_probs) - 1e-6
         surrogate_loss = - torch.sum(vals * log_probability)
-        # M.red(surrogate_loss.data.numpy()[0])
         surrogate_loss.backward()
         self.action.optimizer.step()
 
@@ -143,43 +162,3 @@ class VPG(nn.Module):
 
     def __exit__(self, *err):
         pass
-
-    @staticmethod
-    def discrete_eligibility_fn(actions_ph, action_prob, scope_name="eligibility"):
-        with tf.name_scope(scope_name):
-            oh = tf.transpose(tf.one_hot(actions_ph, 2, axis=0))
-            action_likelihood = tf.reduce_sum(action_prob * oh, axis=1)
-            eligibility = tf.log(action_likelihood) - 1e-6
-        return eligibility
-
-    @staticmethod
-    def eligibility_fn(actions_ph, mu, log_stddev=None, scope_name="eligibility"):
-        with tf.name_scope(scope_name):
-            elgb = - 0.5 * (np.log(2) + np.log(np.pi)) - log_stddev \
-                   - (actions_ph - mu) ** 2 / (2 * tf.exp(log_stddev * 2)) \
-                   - 1e-6
-        return elgb
-
-    @staticmethod
-    def surrogate_fn(elgb, advantage, scope_name="surrogate_loss"):
-        with tf.name_scope(scope_name):
-            surrogate_loss = tf.multiply(elgb, advantage)
-            loss = - tf.reduce_mean(surrogate_loss)
-            return loss
-
-    @staticmethod
-    def value_function(state_ph, rewards_ph, value_lr, scope_name="value_function"):
-        '''predicts the value of the current state, not sum of discounted future rewards.'''
-        with tf.name_scope(scope_name):
-            x = state_ph
-            x = tf_helpers.dense(128, x, scope_name="layer_1", nonlin='relu')
-            # x = tf_helpers.dense(128, x, scope_name="layer_2", nonlin='relu')
-            # x = tf_helpers.dense(128, x, scope_name="layer_3", nonlin='relu')
-            x = tf_helpers.dense(1, x, scope_name="layer_4")
-
-            with tf.name_scope('optimizer'):
-                error = rewards_ph - x
-                loss = error ** 2
-                optimizer = tf.train.AdamOptimizer(value_lr).minimize(loss)
-
-            return x, optimizer

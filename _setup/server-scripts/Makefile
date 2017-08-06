@@ -90,6 +90,12 @@ get-mujoco-id:
 	./getid_linux
 	rm ./getid_linux
 
+get-mujoco-id-osx:
+	wget https://www.roboti.us/getid/getid_osx
+	chmod +x ./getid_osx
+	./getid_osx
+	rm ./getid_osx
+
 get-mujoco:
 	wget -O mjpro$(MJC_VER).zip https://www.roboti.us/download/mjpro$(MJC_VER)_linux.zip
 	sudo apt-get install -y unzip
@@ -148,17 +154,19 @@ install-mujoco-py:
 
 install-gym:
 	# Install Dependencies
-	sudo apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
+#	sudo apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
 	# Install gym
-	rm -rf gym
-	git clone https://github.com/openai/gym.git
+#	rm -rf gym
+#	git clone https://github.com/openai/gym.git
 	# Do not use sudo with bash, then you can't use source activate.
 #	bash -c "source activate gym && cd gym && pip install -e . && pip list --format=legacy | grep gym"
 	# Do not use pip install -e, it relies on this local version
 	# slight race condition for the pip list. First time install does not show updated location for gym
 	bash -c "source activate gym && cd gym && python setup.py install && pip install '.[all]' && pip list --format=legacy | grep gym"
-	rm -rf gym
+#	rm -rf gym
 
 
+install-pytorch:
+	bash -c "source activate gym && conda install pytorch torchvision -c soumith"
 
 

@@ -14,7 +14,7 @@ clear:
 
 # remote scripts
 start-tensorboard:
-	tensorboard --logdir=/tmp/tensorflow/
+	bash -c "source activate gym && tensorboard --logdir=/tmp/tensorflow/"
 install-pdflatex:
 	sudo apt-get install latexlive
 start-jupyter:
