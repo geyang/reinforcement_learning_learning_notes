@@ -75,37 +75,52 @@ class VPG(nn.Module):
         # self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
 
     @staticmethod
-    def discrete_sampling(mu, flag=None):
+    def discrete_sampling(mu, ac_size, sampled_acts=None):
         """Only supports bernoulli distribution. Does not support categorical distribution."""
         # Use an energy calculation for the probability
         probs = F.softmax(mu)
-        if flag == 'probs_only':
-            return probs
-        acts = torch.multinomial(probs, 1)
-        return torch.squeeze(acts, dim=1), probs
+        if sampled_acts is not None:
+            assert isinstance(sampled_acts, Variable), "acts should be a Variable"
+            assert len(sampled_acts.size()) == 1, "acts should be a batch of scalars"
+            assert len(probs.size()) == 2, "act_probs should be a batch of 1d tensor"
+            act_oh = h.one_hot(sampled_acts, feat_n=ac_size)
+            sampled_probs = probs.mul(act_oh).sum(dim=-1)
+            return sampled_probs
+        else:  # sample
+            sampled_acts = torch.squeeze(torch.multinomial(probs, 1), dim=1)
+            return sampled_acts
 
     @staticmethod
-    def gaussian_sampling(mu, log_stddev, flag=None):
-        zeros = torch.zeros(mu.size())
-        ones = torch.ones(mu.size())
-        epsilon = Variable(torch.normal(zeros, ones))
-        stddev = torch.exp(log_stddev)
-        # sample
-        action = torch.mul(epsilon, stddev) + mu
-        # compute sample probability
-        act_probs = epsilon / (2. * np.exp(1. * 2.))
-        return action, act_probs
+    def gaussian_sampling(mu, log_stddev, sampled_acts: Variable = None):
+        if sampled_acts is not None:
+            # use externally fed samples, enables REINFORCE with samples generated from a different policy
+            # enforce sampled_acts being a variable
+            assert isinstance(sampled_acts, Variable), "acts should be a Variable"
+            sampled_acts.requires_grad = False
+            # todo: use exp to improve numerical performance
+            epsilon = (sampled_acts - mu) / torch.exp(log_stddev)
+            # compute sample probability
+            sampled_probs = epsilon / (2. * np.exp(1. * 2.))
+            return sampled_probs
+        else:
+            zeros = torch.zeros(mu.size())
+            ones = torch.ones(mu.size())
+            epsilon = Variable(torch.normal(zeros, ones))
+            # sample
+            stddev = torch.exp(log_stddev)
+            sampled_action = torch.mul(epsilon, stddev) + mu
+            return sampled_action
 
     def act(self, obs):
         obs = h.varify(obs, volatile=True)  # use as inference mode.
         mus, stddev = self.action(obs)
         if self.action_type == 'linear':
-            acts, act_probs = self.discrete_sampling(mus)
+            acts = self.discrete_sampling(mus)
         elif self.action_type == 'gaussian':
-            acts, act_probs = self.gaussian_sampling(mus, stddev)
+            acts = self.gaussian_sampling(mus, stddev)
         else:
             raise Exception('action_type {} is not supported'.format(self.action_type))
-        return acts, act_probs
+        return acts
 
     def learn_value(self, obs, vals, lr):
         # b/c the value_fn is trained in a supervised fashion, we can do the forward/recompute each time.
@@ -135,16 +150,11 @@ class VPG(nn.Module):
         mu, stddev = self.action(obs)
         # todo: problem: different parts of the comp graph got complicated.
         if self.action_type == 'linear':
-            act_probs = self.discrete_sampling(mu, 'probs_only')
+            sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts)
         elif self.action_type == "gaussian":
-            act_probs = self.gaussian_sampling(mu, stddev, 'probs_only')
-        # discrete action space only
-        assert len(acts.size()) == 1, "acts should be a batch of scalars"
-        assert len(act_probs.size()) == 2, "act_probs should be a batch of 1d tensor"
-        act_oh = h.one_hot(acts, n=self.ac_size)
+            sampled_act_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
         # eligibility is the derivative of log_probability
-        normalized_act_prob = act_probs.mul(act_oh).sum(dim=-1)
-        log_probability = torch.log(normalized_act_prob) - 1e-6
+        log_probability = torch.log(sampled_act_probs) - 1e-6
         surrogate_loss = - torch.sum(vals * log_probability)
         # M.red(surrogate_loss.data.numpy()[0])
         surrogate_loss.backward()

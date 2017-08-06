@@ -19,7 +19,7 @@ class GymSession:
         ob = self.env.reset()
         states.append(ob)
         for step in range(env._max_episode_steps):
-            acs, act_probs = self.algo.act([ob])  # use batch as default
+            acs = self.algo.act([ob])  # use batch as default
             action = acs.data.numpy()[0]
             ob, r, done, _ = self.env.step(action)  #
             states.append(ob)
