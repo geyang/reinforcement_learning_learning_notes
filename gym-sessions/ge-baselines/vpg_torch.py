@@ -84,9 +84,6 @@ class VPG(nn.Module):
             sampled_acts.requires_grad = False
             assert len(sampled_acts.size()) == 1, "acts should be a batch of scalars"
             assert len(probs.size()) == 2, "act_probs should be a batch of 1d tensor"
-            # act_oh = h.one_hot(sampled_acts, feat_n=probs.size()[-1]).detach()
-            # act_oh.requires_grad = False
-            # sampled_probs = probs.mul(act_oh).sum(dim=-1).squeeze(dim=-1)
             sampled_probs = h.sample_probs(probs, sampled_acts)
             return sampled_probs
         else:  # sample
