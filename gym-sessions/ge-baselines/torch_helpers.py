@@ -30,23 +30,23 @@ def tensorify(d, type='float', **kwargs) -> torch._TensorBase:
     return tensor_type(d)
 
 
-def varify(d, type='float', **kwargs) -> Variable:
+def varify(d, dtype='float', **kwargs) -> Variable:
     d = np.array(d)
-    t = tensorify(d, type)
+    t = tensorify(d, dtype)
     return Variable(t, **kwargs)
 
 
-def mask(probs, sampled, dim=-1):
+def sample_probs(probs, sampled, dim=-1):
     """
     :param probs: Size(batch_n, feat_n)
     :param sampled: Size(batch_n, ), Variable(LongTensor)
     :param dim: integer from probs.size inclusive.
     :return: sampled_probability: Size(batch_n)
 
-    Use scatter
+    Use scatter and allow the gradient to flow from output -> probs.
     """
     # we do not need to unsqueeze and expand input here.
-    assert probs.size() -1 == sampled.size(), 'sampled should be 1 less dimension than probs.'
+    assert probs.size()[:-1] == sampled.size(), 'sampled should be 1 less dimension than probs.'
     zeros = Variable(torch.zeros(*probs.size()))
     return zeros.scatter(dim, sampled.unsqueeze(dim=-1).expand_as(probs), probs).sum(dim=-1)
 

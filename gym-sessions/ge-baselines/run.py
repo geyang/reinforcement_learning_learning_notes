@@ -56,8 +56,8 @@ if __name__ == "__main__":
     LR = 1e-5
     MAX_STEPS = 2000
     TRAIN_BIAS = 4
-    # ENV = "CartPole-v0"
-    ENV = "Pendulum-v0"
+    ENV = "CartPole-v0"
+    # ENV = "Pendulum-v0"
     RUN_ID = os.environ['RUN_ID']
 
     env = gym.make(ENV)
