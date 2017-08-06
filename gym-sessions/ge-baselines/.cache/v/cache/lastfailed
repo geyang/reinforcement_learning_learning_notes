@@ -1,6 +1,0 @@
-{
-  "sess_test.py": true,
-  "vpg_torch_test.py::test_action": true,
-  "vpg_torch_test.py::test_learn": true,
-  "vpg_torch_test.py::test_learn_value": true
-}
