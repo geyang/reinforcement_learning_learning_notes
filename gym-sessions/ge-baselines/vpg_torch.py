@@ -31,7 +31,6 @@ class Action(nn.Module):
     def forward(self, x):
         mu, stddev = [x] * 2
         assert len(mu.size()) == 2, 'mu should be a 2D tensor with batch_index first.'
-        # mu = F.softmax(self.mu_fc(mu))
         mu = self.mu_fc(mu)
         if self.action_type == "gaussian":
             # todo: need tested
@@ -75,18 +74,24 @@ class VPG(nn.Module):
         # self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
 
     @staticmethod
-    def discrete_sampling(mu, ac_size, sampled_acts=None):
+    def discrete_sampling(mu, sampled_acts=None):
         """Only supports bernoulli distribution. Does not support categorical distribution."""
         # Use an energy calculation for the probability
         probs = F.softmax(mu)
         if sampled_acts is not None:
+            # enforce sampled_acts being a variable
             assert isinstance(sampled_acts, Variable), "acts should be a Variable"
+            sampled_acts.requires_grad = False
             assert len(sampled_acts.size()) == 1, "acts should be a batch of scalars"
             assert len(probs.size()) == 2, "act_probs should be a batch of 1d tensor"
+            # act_oh = h.one_hot(sampled_acts, feat_n=probs.size()[-1]).detach()
+            # act_oh.requires_grad = False
+            # sampled_probs = probs.mul(act_oh).sum(dim=-1).squeeze(dim=-1)
             sampled_probs = h.sample_probs(probs, sampled_acts)
             return sampled_probs
         else:  # sample
-            sampled_acts = torch.squeeze(torch.multinomial(probs, 1), dim=1)
+            draws = torch.multinomial(probs, num_samples=1)
+            sampled_acts = torch.squeeze(draws, dim=-1)
             return sampled_acts
 
     @staticmethod
@@ -114,7 +119,7 @@ class VPG(nn.Module):
         obs = h.varify(obs, volatile=True)  # use as inference mode.
         mus, stddev = self.action(obs)
         if self.action_type == 'linear':
-            acts = self.discrete_sampling(mus, self.ac_size)
+            acts = self.discrete_sampling(mus)
         elif self.action_type == 'gaussian':
             acts = self.gaussian_sampling(mus, stddev)
         else:
@@ -135,10 +140,6 @@ class VPG(nn.Module):
     def learn(self, obs, acts, vals, lr, normalize=False, use_baseline=False):
         obs = h.varify(obs)
         acts = h.varify(acts, dtype='int')
-        # if self.action_type == 'linear':
-        #     acts = h.tensorify(acts, type='int')
-        # elif self.action_type == 'gaussian':
-        #     acts = h.tensorify(acts, type='float')
         if use_baseline:
             vals = h.varify(vals) - self.value_fn(obs)
         else:
@@ -150,13 +151,12 @@ class VPG(nn.Module):
         mu, stddev = self.action(obs)
         # todo: problem: different parts of the comp graph got complicated.
         if self.action_type == 'linear':
-            sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts, ac_size=self.ac_size)
+            sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts)
         elif self.action_type == "gaussian":
             sampled_act_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
         # eligibility is the derivative of log_probability
         log_probability = torch.log(sampled_act_probs) - 1e-6
         surrogate_loss = - torch.sum(vals * log_probability)
-        # M.red(surrogate_loss.data.numpy()[0])
         surrogate_loss.backward()
         self.action.optimizer.step()
 
@@ -165,4 +165,3 @@ class VPG(nn.Module):
 
     def __exit__(self, *err):
         pass
-

@@ -12,7 +12,7 @@ class GymSession:
         self.env = environment
         self.algo = algorithm
 
-    def run_episode(self):
+    def run_episode(self, render=False):
         states = []
         actions = []
         rewards = []
@@ -22,6 +22,8 @@ class GymSession:
             acs = self.algo.act([ob])  # use batch as default
             action = acs.data.numpy()[0]
             ob, r, done, _ = self.env.step(action)  #
+            if render:
+                env.render()
             states.append(ob)
             rewards.append(r)
             actions.append(action)
@@ -76,7 +78,7 @@ if __name__ == "__main__":
     with VPG(ob_size, ac_size, ac_type, run_id=RUN_ID, env=ENV) as algo:
         sess = GymSession(env, algo)
         for ind_epoch in range(5000):
-            obs, acts, rs = sess.run_episode()
+            obs, acts, rs = sess.run_episode(render=False)
             vals = sess.reward_to_value(rs, 0.95)
             # if ind_epoch > 500:
             # if ind_epoch % 5 == 0:
