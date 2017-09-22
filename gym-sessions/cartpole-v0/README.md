@@ -70,7 +70,7 @@ In the most simple case, we can even flatten all of the episodes together.
 
 A deeper version of this policy is implemented in [./vanilla_policy_gradient_deep.py
 ](./vanilla_policy_gradient_deep.py). In this example, I used a multi-layer 
-perceptron network to model the policy. Going beyond 3 layers makes the network harder to train.
+perceptron network to model the policy. Going beyond 3 layers makes the network harder to meta_learning.
  Batch normalization did not help during the experiment.
 
 ## Next steps

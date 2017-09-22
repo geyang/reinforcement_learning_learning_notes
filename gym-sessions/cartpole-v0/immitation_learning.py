@@ -20,10 +20,10 @@ def policy_gradient():
     """usage:
 
     when running episode: (inside run_episode)
-        sess.run(action_p, feed_dict={state: [s]})
+        sess_2.run(action_p, feed_dict={state: [s]})
 
     when running optimization:
-        sess.run(optimizer, feed_dict={state: states, actions: [actions]})
+        sess_2.run(optimizer, feed_dict={state: states, actions: [actions]})
     """
     with tf.variable_scope("policy"):
         # Placeholders

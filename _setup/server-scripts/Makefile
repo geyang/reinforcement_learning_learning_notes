@@ -40,7 +40,7 @@ tensorflow-dependencies:
 	bash -c 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade'
 	sudo apt-get install -y libglu1-mesa libxi-dev libxmu-dev build-essential python-pip python-dev python-numpy python-scipy
 	# Java stuff for Google Bazel/Blaze.
-	sudo apt-get install -y openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy build-essential python-pip python3-pip python3-venv swig python3-wheel libcurl3-dev
+	sudo aptitude install -y openjdk-8-jdk git python-dev python3.5-dev python-numpy python3.5-numpy build-essential python-pip python3-pip python3-venv swig python3-wheel libcurl3-dev
 	# Now install Bazel
 	# echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
 	# curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add -
@@ -48,12 +48,14 @@ tensorflow-dependencies:
 	# sudo apt-get install -y bazel
 	# sudo apt-get upgrade -yq bazel
 	# Install Bazel 0.5.2 from binary
+break:
 	wget https://github.com/bazelbuild/bazel/releases/download/0.5.2/bazel-0.5.2-jdk7-installer-linux-x86_64.sh
 	chmod +x bazel-0.5.2-jdk7-installer-linux-x86_64.sh
 	./bazel-0.5.2-jdk7-installer-linux-x86_64.sh --user
 	bash ./bazel-path.sh
 	# kernel sources and compilers
-	sudo apt-get install -y gcc g++ gfortran  git linux-image-generic linux-headers-generic linux-source linux-image-extra-virtual libopenblas-dev
+	sudo aptitude install -y gcc g++ gfortran  git linux-image-generic linux-headers-generic linux-source linux-image-extra-virtual libopenblas-dev
+break-end:
 	# deactivate neuvu driver
 	echo "blacklist nouveau\nblacklist lbm-nouveau\noptions nouveau modeset=0\nalias nouveau off\nalias lbm-nouveau off" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
 	# Now reboot!
@@ -81,6 +83,8 @@ tensorflow-dependencies-step-2:
 
 build-tensorflow:
 	bash ./tensorflow-compile.sh
+build-tensorflow-no-gpu:
+	bash ./tensorflow-compile-no-gpu.sh
 install-tensorflow-wheel:
 	bash ./tensorflow-install-wheel.sh
 
@@ -99,6 +103,13 @@ get-mujoco-id-osx:
 get-mujoco:
 	wget -O mjpro$(MJC_VER).zip https://www.roboti.us/download/mjpro$(MJC_VER)_linux.zip
 	sudo apt-get install -y unzip
+	mkdir -p ~/.mujoco
+	rm -rf ~/.mujoco/mjpro$(MJC_VER)
+	unzip mjpro$(MJC_VER).zip -d ~/.mujoco
+	rm -rf mjpro$(MJC_VER).zip
+
+get-mujoco-osx:
+	wget -O mjpro$(MJC_VER).zip https://www.roboti.us/download/mjpro$(MJC_VER)_osx.zip
 	mkdir -p ~/.mujoco
 	rm -rf ~/.mujoco/mjpro$(MJC_VER)
 	unzip mjpro$(MJC_VER).zip -d ~/.mujoco
@@ -150,6 +161,7 @@ install-mujoco-py:
 	rm -rf mujoco-py
 	git clone https://github.com/openai/mujoco-py.git
 	bash -c "source activate gym && cd mujoco-py && python setup.py install"
+	rm mujoco-py
 
 
 install-gym:

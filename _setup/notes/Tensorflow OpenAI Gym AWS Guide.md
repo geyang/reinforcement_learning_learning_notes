@@ -196,7 +196,7 @@ Note that the screen size is not flexible. I could not get other screen size to 
     ```
 3. In the same shell session
     ```bash
-    DISPLAY=1:0 python3 -m train.py # the DISPLAY variable is optional since we already set earlier.
+    DISPLAY=1:0 python3 -m meta_learning.py # the DISPLAY variable is optional since we already set earlier.
     ```
 
 ### Using VNC to Access the Display Remotely:

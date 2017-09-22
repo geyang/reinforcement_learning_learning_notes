@@ -1,4 +1,5 @@
 IP=`< ip_address.txt`
+VNC_PORT=4544
 
 ssh:
 	ssh ubuntu@${IP} -i ~/.ec2/escherpad.pem
@@ -27,6 +28,8 @@ create-vnc-password:
 	x11vnc -storepasswd $(VNC_PASSWORD) /tmp/vncpass
 # Only after running the above
 start-display:
-	Xvfb :1 -screen 0 1400x900x24 +extension RANDR &
+	# todo: Try: Xvfb :1 -screen 0 500x1100x24 +extension RANDR &
+#	Xvfb :1 -screen 0 1400x900x24 +extension RANDR &
+	Xvfb :1 -screen 0 800x1100x24 +extension RANDR &
 start-vnc:
 	sudo x11vnc -ncache -rfbport $(VNC_PORT) -rfbauth /tmp/vncpass -display :1 -forever -auth /tmp/xvfb.auth

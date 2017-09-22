@@ -96,7 +96,7 @@ def run_episode(env, policy_grad, value_grad, sess):
     # update value function
     update_vals_vector = np.expand_dims(update_vals, axis=1)
     sess.run(vl_optimizer, feed_dict={vl_state: states, vl_newvals: update_vals_vector})
-    # real_vl_loss = sess.run(vl_loss, feed_dict={vl_state: states, vl_newvals: update_vals_vector})
+    # real_vl_loss = sess_2.run(vl_loss, feed_dict={vl_state: states, vl_newvals: update_vals_vector})
 
     advantages_vector = np.expand_dims(advantages, axis=1)
     sess.run(pl_optimizer, feed_dict={pl_state: states, pl_advantages: advantages_vector, pl_actions: actions})

@@ -16,14 +16,16 @@ class Action(nn.Module):
         self.action_type = action_type
 
         if action_type == 'gaussian':
-            self.mu_fc = nn.Linear(input_size, ac_size)
-            self.stddev_fc = nn.Linear(input_size, ac_size)
+            self.mu_fc1 = nn.Linear(input_size, ac_size)
+            self.mu_fc1.weight.data.normal_(0.0, 0.3)
+            self.stddev = Variable(torch.ones(1, ac_size) * 0.01, requires_grad=False)
+            # self.stddev_fc1 = nn.Linear(input_size, ac_size)
         elif action_type == 'linear':
             # todo: make action configurable
             self.mu_fc = nn.Linear(input_size, ac_size)
 
         # define the optimizer locally ^_^
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=1e-3)
 
     def set_lr(self, lr):
         self.optimizer.param_groups[0]['lr'] = lr
@@ -31,12 +33,11 @@ class Action(nn.Module):
     def forward(self, x):
         mu, stddev = [x] * 2
         assert len(mu.size()) == 2, 'mu should be a 2D tensor with batch_index first.'
-        mu = self.mu_fc(mu)
         if self.action_type == "gaussian":
-            # todo: need tested
-            stddev = F.softmax(self.stddev_fc(stddev))
-            return mu, stddev
+            mu = self.mu_fc1(mu)
+            return mu, self.stddev.expand_as(mu)
         elif self.action_type == "linear":
+            mu = self.mu_fc(mu)
             return mu, None
 
 
@@ -45,7 +46,8 @@ class ValueNetwork(nn.Module):
         super(ValueNetwork, self).__init__()
         self.input_size = ob_size
 
-        self.fc1 = nn.Linear(ob_size, 1)
+        self.fc1 = nn.Linear(ob_size, 28)
+        self.fc2 = nn.Linear(28, 1)
         # self.layers = nn.ParameterList(Parameter1, Parameter2, ...)
 
         self.criterion = nn.MSELoss(size_average=False)
@@ -55,7 +57,8 @@ class ValueNetwork(nn.Module):
         self.optimizer.param_groups[0]['lr'] = lr
 
     def forward(self, x):
-        x = self.fc1(x)
+        x = F.sigmoid(self.fc1(x))
+        x = self.fc2(x)
         x = x.squeeze(dim=-1)
         return x
 
@@ -64,6 +67,7 @@ class VPG(nn.Module):
     def __init__(self, ob_size, ac_size, action_type, **kwargs):
         super(VPG, self).__init__()
 
+        self.input_size = ob_size
         self.ac_size = ac_size
         self.action_type = action_type
 
@@ -72,6 +76,7 @@ class VPG(nn.Module):
         self.value_fn = ValueNetwork(ob_size)
         self.action = Action(ob_size, ac_size, action_type)
         # self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        self.surrogate_loss = 0
 
     @staticmethod
     def discrete_sampling(mu, sampled_acts=None):
@@ -84,31 +89,30 @@ class VPG(nn.Module):
             sampled_acts.requires_grad = False
             assert len(sampled_acts.size()) == 1, "acts should be a batch of scalars"
             assert len(probs.size()) == 2, "act_probs should be a batch of 1d tensor"
-            sampled_probs = h.sample_probs(probs, sampled_acts)
-            return sampled_probs
+            sampled_log_probs = torch.log(h.sample_probs(probs, sampled_acts))
+            return sampled_log_probs
         else:  # sample
             draws = torch.multinomial(probs, num_samples=1)
             sampled_acts = torch.squeeze(draws, dim=-1)
             return sampled_acts
 
     @staticmethod
-    def gaussian_sampling(mu, log_stddev, sampled_acts: Variable = None):
+    def gaussian_sampling(mu, stddev, sampled_acts: Variable = None):
         if sampled_acts is not None:
             # use externally fed samples, enables REINFORCE with samples generated from a different policy
             # enforce sampled_acts being a variable
             assert isinstance(sampled_acts, Variable), "acts should be a Variable"
             sampled_acts.requires_grad = False
-            # todo: use exp to improve numerical performance
-            epsilon = (sampled_acts - mu) / torch.exp(log_stddev)
             # compute sample probability
-            sampled_probs = epsilon / (2. * np.exp(1. * 2.))
-            return sampled_probs
+            sampled_log_probs = - float(np.log(2 * np.pi) / 2) \
+                                - torch.log(stddev) \
+                                - (sampled_acts - mu) ** 2 / (2 * stddev ** 2)
+            return sampled_log_probs
         else:
             zeros = torch.zeros(mu.size())
             ones = torch.ones(mu.size())
             epsilon = Variable(torch.normal(zeros, ones))
             # sample
-            stddev = torch.exp(log_stddev)
             sampled_action = torch.mul(epsilon, stddev) + mu
             return sampled_action
 
@@ -134,28 +138,38 @@ class VPG(nn.Module):
         loss.backward()
         self.value_fn.optimizer.step()
 
-    def learn(self, obs, acts, vals, lr, normalize=False, use_baseline=False):
-        obs = h.varify(obs)
-        acts = h.varify(acts, dtype='int')
-        if use_baseline:
-            vals = h.varify(vals) - self.value_fn(obs)
-        else:
-            vals = h.varify(vals)
-        if normalize:
-            vals = (vals - torch.mean(vals, dim=0).expand_as(vals)) / (torch.std(vals, dim=0) + 1e-8).expand_as(vals)
-        self.action.set_lr(lr)
-        self.action.optimizer.zero_grad()
+    def reinforce(self, obs, acts, vs):
+        """
+        :param obs: Size(batch_n, steps, ob_size)
+        :param acts: Size(batch_n, steps, ac_size)
+        :param vs: Size(batch_n, steps)
+        :param normalize: bool
+        :param use_baseline: bool
+        :return: None
+        """
+        obs = h.varify(obs)  # .view(-1, self.input_size)
+        # todo: support higher dimensional value functions?
+        vs = h.varify(vs)  # .view(-1)  # self.value_fn(obs)
         mu, stddev = self.action(obs)
-        # todo: problem: different parts of the comp graph got complicated.
         if self.action_type == 'linear':
-            sampled_act_probs = self.discrete_sampling(mu, sampled_acts=acts)
+            acts = h.varify(acts, dtype='int')
+            sampled_log_probs = self.discrete_sampling(mu, sampled_acts=acts)
         elif self.action_type == "gaussian":
-            sampled_act_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
+            acts = h.varify(acts, dtype='float')
+            sampled_log_probs = self.gaussian_sampling(mu, stddev, sampled_acts=acts)
         # eligibility is the derivative of log_probability
-        log_probability = torch.log(sampled_act_probs) - 1e-6
-        surrogate_loss = - torch.sum(vals * log_probability)
-        surrogate_loss.backward()
+        self.surrogate_loss -= torch.sum(vs * sampled_log_probs)
+
+    def step(self, lr):
+        """
+        :param lr:
+        :return:
+        """
+        self.surrogate_loss.backward()
+        self.action.set_lr(lr)
         self.action.optimizer.step()
+        self.surrogate_loss = 0
+        self.action.optimizer.zero_grad()
 
     def __enter__(self):
         return self

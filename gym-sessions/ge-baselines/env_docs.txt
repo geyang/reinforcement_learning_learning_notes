@@ -48,3 +48,100 @@ CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0
 [32mDiscrete(2)[0m
 Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
 [32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+Reacher-v1type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(2,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(4)[0m
+CartPole-v0type of action_space: 	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+[32mDiscrete(2)[0m
+Pendulum-v0type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+InvertedPendulum-v1type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(1,)[0m
+Reacher-v1type of action_space: 	[32m<class 'gym.spaces.box.Box'>[0m
+[32mBox(2,)[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0
+type of action_space: 	[32mDiscrete(4)[0m
+[32m<class 'gym.spaces.discrete.Discrete'>[0m
+type of observation: 	[32mDiscrete(16)[0m
+[32m<class 'gym.spaces.discrete.Discrete'>[0m
+CartPole-v0
+type of action_space: 	[32mDiscrete(2)[0m
+[32m<class 'gym.spaces.discrete.Discrete'>[0m
+type of observation: 	[32mBox(4,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+Pendulum-v0
+type of action_space: 	[32mBox(1,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(3,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+InvertedPendulum-v1
+type of action_space: 	[32mBox(1,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(4,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+Reacher-v1
+type of action_space: 	[32mBox(2,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(11,)[0m
+[32m<class 'gym.spaces.box.Box'>[0m
+# to view this file with color, do `less -R $./env_docs.txt`
+FrozenLake-v0
+type of action_space: 	[32mDiscrete(4)[0m	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+type of observation: 	[32mDiscrete(16)[0m	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+CartPole-v0
+type of action_space: 	[32mDiscrete(2)[0m	[32m<class 'gym.spaces.discrete.Discrete'>[0m
+type of observation: 	[32mBox(4,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+Pendulum-v0
+type of action_space: 	[32mBox(1,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(3,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+InvertedPendulum-v1
+type of action_space: 	[32mBox(1,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(4,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+Reacher-v1
+type of action_space: 	[32mBox(2,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
+type of observation: 	[32mBox(11,)[0m	[32m<class 'gym.spaces.box.Box'>[0m
