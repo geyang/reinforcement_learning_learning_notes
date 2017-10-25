@@ -18,7 +18,7 @@ start-display:
 create-vnc-password:
 	x11vnc -storepasswd $(VNC_PASSWORD) /tmp/vncpass
 start-vnc:
-	sudo x11vnc -ncache -rfbport $(VNC_PORT) -rfbauth /tmp/vncpass -display :1 -forever -auth /tmp/xvfb.auth
+	sudo x11vnc -ncache 0 -rfbport $(VNC_PORT) -rfbauth /tmp/vncpass -display :1 -forever -auth /tmp/xvfb.auth
 start-tensorboard:
 	tensorboard --logdir=/tmp/tensorflow/
 
