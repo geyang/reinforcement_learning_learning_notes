@@ -1,3 +1,4 @@
+---
 link: https://en.wikipedia.org/wiki/Control_variates
 ---
 
