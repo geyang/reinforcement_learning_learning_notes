@@ -26,7 +26,7 @@ My notes on reinforcement learning
 
 
 ### On How to Ask for Help
-I found textbook to be the most reliable source, but there is usually too much material. So the best way to ask for guidance seem to be:
+I found textbook to be the most reliable source but it's easy to get lost in the chapters. So the best way to ask for guidance seem to be:
 > I'm reading Chapter xx and topic xx atm, what are the key things I should pay attention to?
 
 ### Reference Readings
