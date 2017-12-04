@@ -2,13 +2,18 @@
 
 My notes on reinforcement learning
 
-## Doing (2017-10-26)
+## Doing (2017-12-04)
 
-- [ ] DQN
-
+- [ ] C51, distributional Q-learning
+- [ ] Solve Montezuma with reweighted sampling
 
 ### Done
 
+- [x] DQN
+    - [x] prioritized replay
+    - [x] double Q-learning (or half Q-learning)
+    - [x] dueling networks
+    - [x] $\epsilon$-greedy with linear scheduling
 - [x] Gradients, and REINFORCE algorithm
 - [x] Get MuJoCo
 - [x] setup OpenAI Gym on AWS (yay!:confetti_ball:)
