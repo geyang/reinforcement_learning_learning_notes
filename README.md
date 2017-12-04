@@ -1,6 +1,8 @@
 # Reinforcement Learning Notes
 
-My notes on reinforcement learning. I have moved some of the newer algorithms to different repos so the list here is incomplete.
+My notes on reinforcement learning. 
+
+**Update**: I am implementing some new algorithms in private repos, so the list here is incomplete. I will come back to update this from time to time.
 
 ## Plans (2017-12-04)
 
