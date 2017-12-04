@@ -1,11 +1,12 @@
 # Reinforcement Learning Notes
 
-My notes on reinforcement learning
+My notes on reinforcement learning. I have moved some of the newer algorithms to different repos so the list here is incomplete.
 
-## Doing (2017-12-04)
+## Plans (2017-12-04)
 
 - [ ] C51, distributional Q-learning
-- [ ] Solve Montezuma with reweighted sampling
+- [ ] Solve Montezuma with re-weighted sampling
+- [ ] Move PPO into this repo
 
 ### Done
 
@@ -15,12 +16,13 @@ My notes on reinforcement learning
     - [x] dueling networks
     - [x] $\epsilon$-greedy with linear scheduling
 - [x] Gradients, and REINFORCE algorithm
-- [x] Get MuJoCo
-- [x] setup OpenAI Gym on AWS (yay!:confetti_ball:)
-- [x] install `MuJoCo` :confetti_ball:
-- [x] install `mujoco-py` (need to upgrade to 1.50 now supports python 3.6)
-- [x] make a list of concepts to keep track of
 - [x] policy gradients
+- [x] Setups
+    - [x] Get MuJoCo
+    - [x] setup OpenAI Gym on AWS (yay!:confetti_ball:)
+    - [x] install `MuJoCo` :confetti_ball:
+    - [x] install `mujoco-py` (need to upgrade to 1.50 now supports python 3.6)
+- [x] make a list of concepts to keep track of
 
 ### Backlog
 
