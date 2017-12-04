@@ -1,0 +1,16 @@
+%YAML 1.2
+---
+config:
+  # 8 gives better usage of i7 CPU.
+  max_concurrent: 1
+env:
+#  DISPLAY: ":1"
+  PYTHONPATH: $HOME/machine_learning/ge_readings_and_prep/ge_dqn
+run: |
+  echo "{env} python ./scripts/dqn_breakout.py {args}"
+  {env} python ./scripts/dqn_breakout.py {args}
+default_args:
+  test: 1
+batch_args:
+  - test: 1
+
